@@ -704,13 +704,19 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    const RECORDS_PATH = 'records';
+    const USERS_PATH = 'users';
+    const PARCELS_PATH = 'parcels';
 
-    // Firebase helpers that mimic the old dataSdk API
+    // Route to the correct Firebase path based on record type
+    function _pathFor(obj) {
+      return obj.type === 'user' ? USERS_PATH : PARCELS_PATH;
+    }
+
+    // Firebase helpers — reads/writes to separate users / parcels nodes
     const dataSdk = {
       async create(obj) {
         try {
-          const newRef = push(ref(db, RECORDS_PATH));
+          const newRef = push(ref(db, _pathFor(obj)));
           await set(newRef, obj);
           return { isOk: true, key: newRef.key };
         } catch (e) { console.error(e); return { isOk: false }; }
@@ -718,24 +724,40 @@
       async update(obj) {
         try {
           const id = obj.__backendId;
+          const path = _pathFor(obj);
           const data = { ...obj };
           delete data.__backendId;
-          await update(ref(db, `${RECORDS_PATH}/${id}`), data);
+          await update(ref(db, `${path}/${id}`), data);
           return { isOk: true };
         } catch (e) { console.error(e); return { isOk: false }; }
       },
       async delete(obj) {
         try {
-          await remove(ref(db, `${RECORDS_PATH}/${obj.__backendId}`));
+          await remove(ref(db, `${_pathFor(obj)}/${obj.__backendId}`));
           return { isOk: true };
         } catch (e) { console.error(e); return { isOk: false }; }
       },
       init(handler) {
-        onValue(ref(db, RECORDS_PATH), (snap) => {
+        // Listen to both collections independently and merge before notifying
+        let usersData = [];
+        let parcelsData = [];
+
+        function notify() {
+          handler.onDataChanged([...usersData, ...parcelsData]);
+        }
+
+        onValue(ref(db, USERS_PATH), (snap) => {
           const raw = snap.val() || {};
-          const data = Object.entries(raw).map(([key, val]) => ({ ...val, __backendId: key }));
-          handler.onDataChanged(data);
+          usersData = Object.entries(raw).map(([k, v]) => ({ ...v, __backendId: k }));
+          notify();
         });
+
+        onValue(ref(db, PARCELS_PATH), (snap) => {
+          const raw = snap.val() || {};
+          parcelsData = Object.entries(raw).map(([k, v]) => ({ ...v, __backendId: k }));
+          notify();
+        });
+
         return Promise.resolve({ isOk: true });
       }
     };
@@ -746,7 +768,8 @@
     };
 
     let config = { ...defaultConfig };
-    let allData = [];
+    let rawData = []; // all Firebase records — used for auth only
+    let allData = []; // role-filtered — what the UI sees
     let currentUser = null;
     let isProcessing = false;
     let currentTab = 'all';
@@ -924,9 +947,11 @@
       renderAdminView();
     }
 
-    // Update stats
+    // Update stats — admins see all parcels; regular users see only their own
     function updateStats() {
-      const parcels = allData.filter(d => d.type === 'parcel');
+      const parcels = (currentUser && currentUser.role !== 'admin')
+        ? allData.filter(d => d.type === 'parcel' && d.username_owner === currentUser.username)
+        : allData.filter(d => d.type === 'parcel');
       const pending = parcels.filter(p => p.status === 'pending').length;
       const shipping = parcels.filter(p => p.status === 'shipping').length;
       const delivered = parcels.filter(p => p.status === 'delivered').length;
@@ -1435,7 +1460,19 @@
     // Data handler
     const dataHandler = {
       onDataChanged(data) {
-        allData = data;
+        // Always keep the full dataset for authentication lookups
+        rawData = data;
+
+        // Role-filter: regular users only see their own data
+        if (currentUser && currentUser.role !== 'admin') {
+          allData = data.filter(d =>
+            (d.type === 'parcel' && d.username_owner === currentUser.username) ||
+            (d.type === 'user' && d.username === currentUser.username)
+          );
+        } else {
+          allData = data; // admin sees everything
+        }
+
         updateStats();
 
         if (currentUser) {
@@ -1446,9 +1483,8 @@
           }
         }
 
-        const totalRecords = data.length;
+        const totalRecords = rawData.length;
         const warningEl = document.getElementById('limit-warning');
-
         if (warningEl && totalRecords >= 999) {
           warningEl.classList.remove('hidden');
         } else if (warningEl) {
@@ -1476,7 +1512,7 @@
 
       // Check if database is empty and seed if needed
       setTimeout(() => {
-        const userCount = allData.filter(d => d.type === 'user').length;
+        const userCount = rawData.filter(d => d.type === 'user').length;
         if (userCount === 0) {
           seedData();
         }
@@ -1484,7 +1520,7 @@
         // ── Auto-restore session from cookie ────────────────────
         const savedUsername = getCookie('parcel_session');
         if (savedUsername && !currentUser) {
-          const user = allData.find(d => d.type === 'user' && d.username === savedUsername);
+          const user = rawData.find(d => d.type === 'user' && d.username === savedUsername);
           if (user) {
             applySession(user);
             showToast(`ยินดีต้อนรับกลับ, ${user.username}`);
@@ -1501,7 +1537,8 @@
         const username = document.getElementById('login-username').value.trim();
         const password = document.getElementById('login-password').value;
 
-        const user = allData.find(d => d.type === 'user' && d.username === username);
+        // Use rawData for login so non-filtered list is always searched
+        const user = rawData.find(d => d.type === 'user' && d.username === username);
 
         if (!user) {
           showToast('ไม่พบบัญชีผู้ใช้นี้', 'error');
@@ -1541,13 +1578,14 @@
           return;
         }
 
-        const existingUser = allData.find(d => d.type === 'user' && d.username === username);
+        // Use rawData so the full user list is checked for duplicates
+        const existingUser = rawData.find(d => d.type === 'user' && d.username === username);
         if (existingUser) {
           showToast('ชื่อผู้ใช้นี้ถูกใช้แล้ว', 'error');
           return;
         }
 
-        if (allData.length >= 999) {
+        if (rawData.length >= 999) {
           showToast('ระบบเต็มแล้ว ไม่สามารถสมัครได้', 'error');
           return;
         }
