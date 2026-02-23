@@ -1,0 +1,1746 @@
+<!doctype html>
+<html lang="th" class="h-full">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบจัดการพัสดุ</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&amp;display=swap"
+    rel="stylesheet">
+  <style>
+    * {
+      font-family: 'Prompt', sans-serif;
+    }
+
+    .gradient-bg {
+      background: linear-gradient(135deg, #1e3a5f 0%, #0d1b2a 50%, #1b263b 100%);
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    .input-field {
+      transition: all 0.3s ease;
+      border: 2px solid #e5e7eb;
+    }
+
+    .input-field:focus {
+      border-color: #f59e0b;
+      box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.4);
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, #1e3a5f 0%, #0d1b2a 100%);
+      transition: all 0.3s ease;
+    }
+
+    .btn-secondary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px -5px rgba(30, 58, 95, 0.4);
+    }
+
+    .parcel-card {
+      transition: all 0.3s ease;
+    }
+
+    .parcel-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.2);
+    }
+
+    .status-pending {
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    }
+
+    .status-shipping {
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    }
+
+    .status-delivered {
+      background: linear-gradient(135deg, #10b981, #059669);
+    }
+
+    .floating-shape {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.1;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0) rotate(0deg);
+      }
+
+      50% {
+        transform: translateY(-20px) rotate(180deg);
+      }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .toast {
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .map-container {
+      height: 200px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid #e5e7eb;
+    }
+
+    .role-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .role-admin {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+    }
+
+    .role-user {
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      color: white;
+    }
+
+    /* Tabs — scrollable on mobile */
+    #admin-tabs {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      white-space: nowrap;
+      display: flex;
+    }
+
+    #admin-tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tab-button {
+      padding: 10px 16px;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      flex-shrink: 0;
+      font-size: 14px;
+    }
+
+    .tab-button.active {
+      border-bottom-color: #f59e0b;
+      color: #f59e0b;
+      font-weight: 600;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 260px;
+      margin: 12px 0;
+    }
+
+    .filter-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 2px solid #e5e7eb;
+      background: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      font-size: 13px;
+    }
+
+    .filter-btn.active {
+      background: #f59e0b;
+      color: white;
+      border-color: #f59e0b;
+    }
+
+    .filter-btn:hover {
+      border-color: #f59e0b;
+    }
+
+    /* Bottom nav for mobile */
+    #mobile-bottom-nav {
+      display: none;
+    }
+
+    /* Card action buttons wrap nicely */
+    .card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    /* Mobile modal full screen */
+    @media (max-width: 639px) {
+      #tracking-modal {
+        padding: 0;
+        align-items: flex-end;
+      }
+
+      #tracking-modal>div {
+        max-width: 100%;
+        width: 100%;
+        border-radius: 20px 20px 0 0;
+        height: auto;
+        max-height: 90vh;
+      }
+
+      .floating-shape {
+        display: none;
+      }
+
+      .glass-card {
+        padding: 24px 20px;
+      }
+
+      #dashboard-title {
+        font-size: 15px;
+      }
+
+      main {
+        padding-bottom: 80px !important;
+      }
+
+      #mobile-bottom-nav {
+        display: flex;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+
+      .card-actions button {
+        font-size: 12px;
+        padding: 6px 10px;
+      }
+
+      .chart-container {
+        height: 200px;
+      }
+    }
+
+    @media (min-width: 640px) {
+      .map-container {
+        height: 300px;
+      }
+
+      .chart-container {
+        height: 300px;
+      }
+
+      .tab-button {
+        padding: 12px 20px;
+        font-size: 15px;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .chart-container {
+        height: 350px;
+      }
+    }
+  </style>
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+
+<body class="h-full">
+  <div id="app" class="h-full overflow-auto"><!-- Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div><!-- Login Page -->
+    <div id="login-page" class="min-h-full gradient-bg flex items-center justify-center p-4 relative overflow-hidden">
+      <div class="floating-shape w-64 h-64 bg-amber-400" style="top: 10%; left: 10%; animation-delay: 0s;"></div>
+      <div class="floating-shape w-48 h-48 bg-blue-400" style="bottom: 20%; right: 15%; animation-delay: 2s;"></div>
+      <div class="floating-shape w-32 h-32 bg-white" style="top: 50%; left: 80%; animation-delay: 4s;"></div>
+      <div class="glass-card rounded-3xl p-8 md:p-12 w-full max-w-md relative z-10 fade-in">
+        <div class="text-center mb-8">
+          <div
+            class="w-20 h-20 bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+            </svg>
+          </div>
+          <h1 id="login-title" class="text-3xl font-bold text-gray-800">ระบบจัดการพัสดุ</h1>
+          <p id="login-subtitle" class="text-gray-500 mt-2">ยินดีต้อนรับกลับ</p>
+        </div>
+        <form id="login-form" class="space-y-5">
+          <div><label class="block text-sm font-medium text-gray-700 mb-2">ชื่อผู้ใช้</label> <input type="text"
+              id="login-username" class="input-field w-full px-4 py-3 rounded-xl outline-none"
+              placeholder="กรอกชื่อผู้ใช้" required>
+          </div>
+          <div><label class="block text-sm font-medium text-gray-700 mb-2">รหัสผ่าน</label> <input type="password"
+              id="login-password" class="input-field w-full px-4 py-3 rounded-xl outline-none"
+              placeholder="กรอกรหัสผ่าน" required>
+          </div><button type="submit" class="btn-primary w-full py-4 rounded-xl text-white font-semibold text-lg">
+            เข้าสู่ระบบ </button>
+        </form>
+        <p class="text-center mt-6 text-gray-600">ยังไม่มีบัญชี? <button onclick="showPage('register')"
+            class="text-amber-600 font-semibold hover:underline">สมัครสมาชิก</button></p>
+      </div>
+    </div><!-- Register Page -->
+    <div id="register-page"
+      class="min-h-full gradient-bg flex items-center justify-center p-4 relative overflow-hidden hidden">
+      <div class="floating-shape w-64 h-64 bg-emerald-400" style="top: 15%; right: 10%; animation-delay: 1s;"></div>
+      <div class="floating-shape w-48 h-48 bg-purple-400" style="bottom: 15%; left: 10%; animation-delay: 3s;"></div>
+      <div class="glass-card rounded-3xl p-8 md:p-12 w-full max-w-md relative z-10 fade-in">
+        <div class="text-center mb-8">
+          <div
+            class="w-20 h-20 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+            </svg>
+          </div>
+          <h1 class="text-3xl font-bold text-gray-800">สมัครสมาชิก</h1>
+          <p class="text-gray-500 mt-2">สร้างบัญชีใหม่</p>
+        </div>
+        <form id="register-form" class="space-y-4">
+          <div><label class="block text-sm font-medium text-gray-700 mb-2">ชื่อผู้ใช้</label> <input type="text"
+              id="reg-username" class="input-field w-full px-4 py-3 rounded-xl outline-none"
+              placeholder="กรอกชื่อผู้ใช้" required>
+          </div>
+          <div><label class="block text-sm font-medium text-gray-700 mb-2">อีเมล</label> <input type="email"
+              id="reg-email" class="input-field w-full px-4 py-3 rounded-xl outline-none" placeholder="กรอกอีเมล"
+              required>
+          </div>
+          <div><label class="block text-sm font-medium text-gray-700 mb-2">รหัสผ่าน</label> <input type="password"
+              id="reg-password" class="input-field w-full px-4 py-3 rounded-xl outline-none" placeholder="กรอกรหัสผ่าน"
+              required>
+          </div>
+          <div><label class="block text-sm font-medium text-gray-700 mb-2">ยืนยันรหัสผ่าน</label> <input type="password"
+              id="reg-confirm" class="input-field w-full px-4 py-3 rounded-xl outline-none" placeholder="ยืนยันรหัสผ่าน"
+              required>
+          </div><button type="submit" class="btn-primary w-full py-4 rounded-xl text-white font-semibold text-lg">
+            สมัครสมาชิก </button>
+        </form>
+        <p class="text-center mt-6 text-gray-600">มีบัญชีแล้ว? <button onclick="showPage('login')"
+            class="text-amber-600 font-semibold hover:underline">เข้าสู่ระบบ</button></p>
+      </div>
+    </div><!-- Dashboard Page -->
+    <div id="dashboard-page" class="min-h-full bg-gray-50 hidden"><!-- Header -->
+      <header class="bg-white shadow-sm sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between">
+          <div class="flex items-center gap-2 sm:gap-3">
+            <div
+              class="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl flex items-center justify-center flex-shrink-0">
+              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+              </svg>
+            </div>
+            <h1 id="dashboard-title" class="font-bold text-gray-800 text-base sm:text-xl">ระบบจัดการพัสดุ</h1>
+          </div>
+          <div class="flex items-center gap-2 sm:gap-4">
+            <div class="text-right hidden md:block">
+              <p id="welcome-user" class="text-gray-800 font-semibold"></p>
+              <span id="user-role-badge" class="role-badge"></span>
+            </div>
+            <button onclick="logout()"
+              class="bg-red-500 hover:bg-red-600 text-white px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center gap-1">
+              <svg class="w-4 h-4 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              <span class="hidden sm:inline">ออกจากระบบ</span>
+            </button>
+          </div>
+        </div>
+      </header><!-- Main Content -->
+      <main class="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8"><!-- Tabs for Admin -->
+        <div id="admin-tabs" class="hidden mb-4 sm:mb-6 border-b border-gray-200">
+          <button onclick="switchTab('all', this)" class="tab-button active">พัสดุทั้งหมด</button>
+          <button onclick="switchTab('manage', this)" class="tab-button">จัดการพัสดุ</button>
+          <button onclick="switchTab('users', this)" class="tab-button">ผู้ใช้</button>
+          <button onclick="switchTab('analytics', this)" class="tab-button">สถิติ</button>
+        </div><!-- Stats Cards -->
+        <div class="stats-grid grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
+          <div class="bg-white rounded-2xl p-6 shadow-sm">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center">
+                <svg class="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                </svg>
+              </div>
+              <div>
+                <p class="text-gray-500 text-sm">พัสดุทั้งหมด</p>
+                <p id="stat-total" class="text-2xl font-bold text-gray-800">0</p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white rounded-2xl p-6 shadow-sm">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 bg-amber-100 rounded-xl flex items-center justify-center">
+                <svg class="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <div>
+                <p class="text-gray-500 text-sm">รอดำเนินการ</p>
+                <p id="stat-pending" class="text-2xl font-bold text-amber-600">0</p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white rounded-2xl p-6 shadow-sm">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center">
+                <svg class="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0">
+                  </path>
+                </svg>
+              </div>
+              <div>
+                <p class="text-gray-500 text-sm">กำลังจัดส่ง</p>
+                <p id="stat-shipping" class="text-2xl font-bold text-blue-600">0</p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white rounded-2xl p-6 shadow-sm">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 bg-emerald-100 rounded-xl flex items-center justify-center">
+                <svg class="w-7 h-7 text-emerald-600" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <div>
+                <p class="text-gray-500 text-sm">จัดส่งสำเร็จ</p>
+                <p id="stat-delivered" class="text-2xl font-bold text-emerald-600">0</p>
+              </div>
+            </div>
+          </div>
+        </div><!-- User View: My Parcels -->
+        <div id="user-view" class="space-y-8">
+          <div class="bg-white rounded-2xl p-6 shadow-sm">
+            <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+              <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6">
+                </path>
+              </svg> เพิ่มพัสดุใหม่
+            </h2>
+            <form id="parcel-form-user" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div><label class="block text-sm font-medium text-gray-700 mb-2">ชื่อผู้ส่ง</label> <input type="text"
+                  id="sender-name-user" class="input-field w-full px-4 py-3 rounded-xl outline-none"
+                  placeholder="กรอกชื่อผู้ส่ง" required>
+              </div>
+              <div><label class="block text-sm font-medium text-gray-700 mb-2">ชื่อผู้รับ</label> <input type="text"
+                  id="receiver-name-user" class="input-field w-full px-4 py-3 rounded-xl outline-none"
+                  placeholder="กรอกชื่อผู้รับ" required>
+              </div>
+              <div><label class="block text-sm font-medium text-gray-700 mb-2">ที่อยู่ผู้รับ</label> <input type="text"
+                  id="receiver-address-user" class="input-field w-full px-4 py-3 rounded-xl outline-none"
+                  placeholder="กรอกที่อยู่" required>
+              </div>
+              <div><label class="block text-sm font-medium text-gray-700 mb-2">ประเภทพัสดุ</label> <select
+                  id="parcel-type-user" class="input-field w-full px-4 py-3 rounded-xl outline-none bg-white">
+                  <option value="เอกสาร">เอกสาร</option>
+                  <option value="พัสดุขนาดเล็ก">พัสดุขนาดเล็ก</option>
+                  <option value="พัสดุขนาดกลาง">พัสดุขนาดกลาง</option>
+                  <option value="พัสดุขนาดใหญ่">พัสดุขนาดใหญ่</option>
+                  <option value="สินค้าแตกหักง่าย">สินค้าแตกหักง่าย</option>
+                </select>
+              </div>
+              <div><label class="block text-sm font-medium text-gray-700 mb-2">น้ำหนัก (กก.)</label> <input
+                  type="number" step="0.1" id="parcel-weight-user"
+                  class="input-field w-full px-4 py-3 rounded-xl outline-none" placeholder="กรอกน้ำหนัก" required>
+              </div>
+              <div class="flex items-end"><button type="submit" id="add-parcel-btn-user"
+                  class="btn-primary w-full py-3 rounded-xl text-white font-semibold"> เพิ่มพัสดุ </button>
+              </div>
+            </form>
+          </div>
+          <div class="bg-white rounded-2xl p-6 shadow-sm">
+            <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+              <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                </path>
+              </svg> พัสดุของฉัน
+            </h2>
+            <div id="user-parcel-list" class="space-y-4">
+              <p class="text-gray-500 text-center py-8">ยังไม่มีพัสดุของคุณในระบบ</p>
+            </div>
+          </div>
+        </div><!-- Admin View: All Parcels -->
+        <div id="admin-all-tab" class="hidden space-y-8">
+          <div class="bg-white rounded-2xl p-6 shadow-sm">
+            <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+              <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                </path>
+              </svg> รายการพัสดุทั้งหมด
+            </h2>
+            <div id="admin-all-list" class="space-y-4">
+              <p class="text-gray-500 text-center py-8">ยังไม่มีพัสดุในระบบ</p>
+            </div>
+          </div>
+        </div><!-- Admin View: Manage Parcels -->
+        <div id="admin-manage-tab" class="hidden space-y-8">
+          <div class="bg-white rounded-2xl p-6 shadow-sm">
+            <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+              <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6">
+                </path>
+              </svg> เพิ่มพัสดุใหม่
+            </h2>
+            <form id="parcel-form-admin" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div><label class="block text-sm font-medium text-gray-700 mb-2">ชื่อผู้ส่ง</label> <input type="text"
+                  id="sender-name-admin" class="input-field w-full px-4 py-3 rounded-xl outline-none"
+                  placeholder="กรอกชื่อผู้ส่ง" required>
+              </div>
+              <div><label class="block text-sm font-medium text-gray-700 mb-2">ชื่อผู้รับ</label> <input type="text"
+                  id="receiver-name-admin" class="input-field w-full px-4 py-3 rounded-xl outline-none"
+                  placeholder="กรอกชื่อผู้รับ" required>
+              </div>
+              <div><label class="block text-sm font-medium text-gray-700 mb-2">ที่อยู่ผู้รับ</label> <input type="text"
+                  id="receiver-address-admin" class="input-field w-full px-4 py-3 rounded-xl outline-none"
+                  placeholder="กรอกที่อยู่" required>
+              </div>
+              <div><label class="block text-sm font-medium text-gray-700 mb-2">ประเภทพัสดุ</label> <select
+                  id="parcel-type-admin" class="input-field w-full px-4 py-3 rounded-xl outline-none bg-white">
+                  <option value="เอกสาร">เอกสาร</option>
+                  <option value="พัสดุขนาดเล็ก">พัสดุขนาดเล็ก</option>
+                  <option value="พัสดุขนาดกลาง">พัสดุขนาดกลาง</option>
+                  <option value="พัสดุขนาดใหญ่">พัสดุขนาดใหญ่</option>
+                  <option value="สินค้าแตกหักง่าย">สินค้าแตกหักง่าย</option>
+                </select>
+              </div>
+              <div><label class="block text-sm font-medium text-gray-700 mb-2">น้ำหนัก (กก.)</label> <input
+                  type="number" step="0.1" id="parcel-weight-admin"
+                  class="input-field w-full px-4 py-3 rounded-xl outline-none" placeholder="กรอกน้ำหนัก" required>
+              </div>
+              <div class="flex items-end"><button type="submit" id="add-parcel-btn-admin"
+                  class="btn-primary w-full py-3 rounded-xl text-white font-semibold"> เพิ่มพัสดุ </button>
+              </div>
+            </form>
+          </div>
+          <div class="bg-white rounded-2xl p-6 shadow-sm">
+            <h2 class="text-xl font-bold text-gray-800 mb-6">จัดการพัสดุ</h2>
+            <div id="admin-manage-list" class="space-y-4">
+              <p class="text-gray-500 text-center py-8">ยังไม่มีพัสดุในระบบ</p>
+            </div>
+          </div>
+        </div><!-- Admin View: Manage Users -->
+        <div id="admin-users-tab" class="hidden space-y-8">
+          <div class="bg-white rounded-2xl p-6 shadow-sm">
+            <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+              <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 4.354a4 4 0 110 5.292M15 21H3a6 6 0 016-6h6a6 6 0 016 6v1"></path>
+              </svg> จัดการผู้ใช้
+            </h2>
+            <div id="admin-users-list" class="space-y-4">
+              <p class="text-gray-500 text-center py-8">ยังไม่มีผู้ใช้ในระบบ</p>
+            </div>
+          </div>
+        </div><!-- Admin View: Analytics -->
+        <div id="admin-analytics-tab" class="hidden space-y-8">
+          <div class="bg-white rounded-2xl p-6 shadow-sm">
+            <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+              <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                </path>
+              </svg> สถิติและรายงาน
+            </h2>
+            <div class="mb-6">
+              <h3 class="text-lg font-semibold text-gray-800 mb-4">สถิติตามช่วงเวลา</h3>
+              <div class="filter-buttons"><button class="filter-btn active"
+                  onclick="updateAnalytics('daily', this)">รายวัน</button> <button class="filter-btn"
+                  onclick="updateAnalytics('weekly', this)">รายสัปดาห์</button> <button class="filter-btn"
+                  onclick="updateAnalytics('monthly', this)">รายเดือน</button>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                <h3 class="font-semibold text-gray-800 mb-4">สถานะพัสดุ</h3>
+                <div class="chart-container">
+                  <canvas id="statusChart"></canvas>
+                </div>
+              </div>
+              <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                <h3 class="font-semibold text-gray-800 mb-4">ประเภทพัสดุ</h3>
+                <div class="chart-container">
+                  <canvas id="typeChart"></canvas>
+                </div>
+              </div>
+            </div>
+            <div class="bg-gray-50 rounded-xl p-4 border border-gray-100 mt-6">
+              <h3 class="font-semibold text-gray-800 mb-4">แนวโน้มจำนวนพัสดุ</h3>
+              <div style="position: relative; height: 200px;" class="sm:h-auto" id="trends-chart-wrap">
+                <canvas id="trendsChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Mobile Bottom Nav -->
+      <nav id="mobile-bottom-nav"
+        class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 sm:hidden">
+        <div class="flex items-center justify-around py-2">
+          <button onclick="mobileSwitchToHome()" class="flex flex-col items-center gap-1 px-4 py-1 text-amber-500">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            <span class="text-xs font-medium">หน้าแรก</span>
+          </button>
+          <button id="mobile-nav-manage" onclick="mobileSwitchToManage()"
+            class="flex flex-col items-center gap-1 px-4 py-1 text-gray-400">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <span class="text-xs font-medium">พัสดุ</span>
+          </button>
+          <button onclick="logout()" class="flex flex-col items-center gap-1 px-4 py-1 text-gray-400">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span class="text-xs font-medium">ออกระบบ</span>
+          </button>
+        </div>
+      </nav>
+    </div><!-- Tracking Modal -->
+    <div id="tracking-modal"
+      class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl p-6 max-w-2xl w-full max-h-full overflow-auto glass-card fade-in">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-2xl font-bold text-gray-800" id="modal-title">แทรก GPS</h2><button
+            onclick="closeTrackingModal()" class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+        </div>
+        <form id="tracking-form" class="space-y-4">
+          <div><label class="block text-sm font-medium text-gray-700 mb-2">Latitude</label> <input type="number"
+              step="0.0001" id="tracking-latitude" class="input-field w-full px-4 py-3 rounded-xl outline-none"
+              placeholder="13.7563" required>
+          </div>
+          <div><label class="block text-sm font-medium text-gray-700 mb-2">Longitude</label> <input type="number"
+              step="0.0001" id="tracking-longitude" class="input-field w-full px-4 py-3 rounded-xl outline-none"
+              placeholder="100.5018" required>
+          </div>
+          <div><label class="block text-sm font-medium text-gray-700 mb-2">รายละเอียดสถานที่</label> <input type="text"
+              id="tracking-location" class="input-field w-full px-4 py-3 rounded-xl outline-none"
+              placeholder="เช่น สถานีขนส่ง กรุงเทพ" required>
+          </div>
+          <div class="map-container" id="tracking-map"></div><button type="submit"
+            class="btn-primary w-full py-3 rounded-xl text-white font-semibold">บันทึก GPS</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, get, push, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    // *** ใส่ Firebase config ของคุณที่นี่ ***
+    const firebaseConfig = {
+      apiKey: "58138deafa13eb21bb51e8bc9b98d0b5252931a9",
+      databaseURL: "https://parcel-system-c8e9e-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "parcel-system-c8e9e"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const RECORDS_PATH = 'records';
+
+    // Firebase helpers that mimic the old dataSdk API
+    const dataSdk = {
+      async create(obj) {
+        try {
+          const newRef = push(ref(db, RECORDS_PATH));
+          await set(newRef, obj);
+          return { isOk: true, key: newRef.key };
+        } catch (e) { console.error(e); return { isOk: false }; }
+      },
+      async update(obj) {
+        try {
+          const id = obj.__backendId;
+          const data = { ...obj };
+          delete data.__backendId;
+          await update(ref(db, `${RECORDS_PATH}/${id}`), data);
+          return { isOk: true };
+        } catch (e) { console.error(e); return { isOk: false }; }
+      },
+      async delete(obj) {
+        try {
+          await remove(ref(db, `${RECORDS_PATH}/${obj.__backendId}`));
+          return { isOk: true };
+        } catch (e) { console.error(e); return { isOk: false }; }
+      },
+      init(handler) {
+        onValue(ref(db, RECORDS_PATH), (snap) => {
+          const raw = snap.val() || {};
+          const data = Object.entries(raw).map(([key, val]) => ({ ...val, __backendId: key }));
+          handler.onDataChanged(data);
+        });
+        return Promise.resolve({ isOk: true });
+      }
+    };
+
+    const defaultConfig = {
+      app_title: 'ระบบจัดการพัสดุ',
+      welcome_text: 'ยินดีต้อนรับ'
+    };
+
+    let config = { ...defaultConfig };
+    let allData = [];
+    let currentUser = null;
+    let isProcessing = false;
+    let currentTab = 'all';
+    let trackingParcelId = null;
+    let analyticsTimeframe = 'daily';
+    let chartInstances = {};
+    let seedingInProgress = false;
+
+    // ── Cookie helpers ───────────────────────────────────────────
+    function setCookie(name, value, days) {
+      const expires = new Date(Date.now() + days * 864e5).toUTCString();
+      document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+    }
+
+    function getCookie(name) {
+      return document.cookie.split('; ').reduce((acc, part) => {
+        const [k, v] = part.split('=');
+        return k === name ? decodeURIComponent(v) : acc;
+      }, null);
+    }
+
+    function deleteCookie(name) {
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
+    }
+
+    // Apply a user session to the UI (shared by login + cookie restore)
+    function applySession(user) {
+      currentUser = user;
+      document.getElementById('welcome-user').textContent = `สวัสดี, ${user.username}`;
+      const roleText = user.role === 'admin' ? 'ผู้ดูแลระบบ' : 'ผู้ใช้ทั่วไป';
+      const roleClass = user.role === 'admin' ? 'role-admin' : 'role-user';
+      document.getElementById('user-role-badge').textContent = roleText;
+      document.getElementById('user-role-badge').className = `role-badge ${roleClass}`;
+      if (user.role === 'admin') {
+        document.getElementById('user-view').classList.add('hidden');
+        document.getElementById('admin-tabs').classList.remove('hidden');
+        renderAdminView();
+      } else {
+        document.getElementById('admin-tabs').classList.add('hidden');
+        document.getElementById('user-view').classList.remove('hidden');
+        renderUserParcels();
+      }
+      showPage('dashboard');
+    }
+
+    // Toast notification
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const bgColor = type === 'success' ? 'bg-emerald-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+      toast.className = `toast ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg font-medium`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // Generate tracking number
+    function generateTrackingNumber() {
+      const prefix = 'TH';
+      const timestamp = Date.now().toString(36).toUpperCase();
+      const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+      return `${prefix}${timestamp}${random}`;
+    }
+
+    // Seed initial data
+    async function seedData() {
+      if (seedingInProgress) return;
+      seedingInProgress = true;
+
+      const users = [
+        { username: 'admin', email: 'admin@system.com', role: 'admin', password: 'admin123' },
+        { username: 'user1', email: 'user1@example.com', role: 'user', password: 'password123' },
+        { username: 'user2', email: 'user2@example.com', role: 'user', password: 'password123' },
+        { username: 'user3', email: 'user3@example.com', role: 'user', password: 'password123' },
+        { username: 'user4', email: 'user4@example.com', role: 'user', password: 'password123' },
+        { username: 'user5', email: 'user5@example.com', role: 'user', password: 'password123' }
+      ];
+
+      const senderNames = ['บริษัท ABC', 'ที่ทำงาน', 'ร้านค้า', 'บ้าน'];
+      const receiverNames = ['นายสมใจ', 'นางสมหญิง', 'นายกิจ', 'นายธรรม', 'นางใจดี'];
+      const addresses = ['กรุงเทพ', 'เชียงใหม่', 'ขอนแก่น', 'เพชรบูรณ์', 'ราชบุรี', 'ชลบุรี'];
+      const types = ['เอกสาร', 'พัสดุขนาดเล็ก', 'พัสดุขนาดกลาง', 'พัสดุขนาดใหญ่', 'สินค้าแตกหักง่าย'];
+      const statuses = ['pending', 'shipping', 'delivered'];
+
+      try {
+        // Create users first
+        for (const user of users) {
+          const result = await dataSdk.create({
+            type: 'user',
+            username: user.username,
+            email: user.email,
+            role: user.role,
+            password: user.password,
+            tracking_number: '',
+            sender_name: '',
+            receiver_name: '',
+            receiver_address: '',
+            status: '',
+            created_at: new Date().toISOString(),
+            weight: '',
+            parcel_type: '',
+            username_owner: '',
+            latitude: '',
+            longitude: '',
+            location_description: ''
+          });
+          if (!result.isOk) break;
+        }
+
+        // Create parcels
+        for (let i = 0; i < 35; i++) {
+          const daysAgo = Math.floor(Math.random() * 60);
+          const date = new Date();
+          date.setDate(date.getDate() - daysAgo);
+
+          const randomUser = users[Math.floor(Math.random() * (users.length - 1)) + 1];
+
+          const result = await dataSdk.create({
+            type: 'parcel',
+            tracking_number: generateTrackingNumber(),
+            sender_name: senderNames[Math.floor(Math.random() * senderNames.length)],
+            receiver_name: receiverNames[Math.floor(Math.random() * receiverNames.length)],
+            receiver_address: addresses[Math.floor(Math.random() * addresses.length)],
+            parcel_type: types[Math.floor(Math.random() * types.length)],
+            weight: (Math.random() * 50 + 0.5).toFixed(2),
+            status: statuses[Math.floor(Math.random() * statuses.length)],
+            created_at: date.toISOString(),
+            username_owner: randomUser.username,
+            username: '',
+            email: '',
+            password: '',
+            role: '',
+            latitude: (13.7563 + (Math.random() - 0.5)).toFixed(4),
+            longitude: (100.5018 + (Math.random() - 0.5)).toFixed(4),
+            location_description: addresses[Math.floor(Math.random() * addresses.length)]
+          });
+          if (!result.isOk) break;
+        }
+
+        showToast('โหลดข้อมูลตัวอย่างสำเร็จ', 'success');
+      } catch (e) {
+        console.error('Seeding error:', e);
+      }
+
+      seedingInProgress = false;
+    }
+
+    // Page navigation
+    function showPage(page) {
+      document.getElementById('login-page').classList.add('hidden');
+      document.getElementById('register-page').classList.add('hidden');
+      document.getElementById('dashboard-page').classList.add('hidden');
+      document.getElementById(`${page}-page`).classList.remove('hidden');
+    }
+
+    // Switch tabs
+    function switchTab(tab, el) {
+      currentTab = tab;
+      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+      if (el) el.classList.add('active');
+
+      document.getElementById('admin-all-tab').classList.add('hidden');
+      document.getElementById('admin-manage-tab').classList.add('hidden');
+      document.getElementById('admin-users-tab').classList.add('hidden');
+      document.getElementById('admin-analytics-tab').classList.add('hidden');
+
+      if (tab === 'all') document.getElementById('admin-all-tab').classList.remove('hidden');
+      else if (tab === 'manage') document.getElementById('admin-manage-tab').classList.remove('hidden');
+      else if (tab === 'users') document.getElementById('admin-users-tab').classList.remove('hidden');
+      else if (tab === 'analytics') {
+        document.getElementById('admin-analytics-tab').classList.remove('hidden');
+        setTimeout(() => updateAnalytics('daily'), 100);
+      }
+
+      renderAdminView();
+    }
+
+    // Update stats
+    function updateStats() {
+      const parcels = allData.filter(d => d.type === 'parcel');
+      const pending = parcels.filter(p => p.status === 'pending').length;
+      const shipping = parcels.filter(p => p.status === 'shipping').length;
+      const delivered = parcels.filter(p => p.status === 'delivered').length;
+
+      document.getElementById('stat-total').textContent = parcels.length;
+      document.getElementById('stat-pending').textContent = pending;
+      document.getElementById('stat-shipping').textContent = shipping;
+      document.getElementById('stat-delivered').textContent = delivered;
+    }
+
+    // Render user parcels
+    function renderUserParcels() {
+      const container = document.getElementById('user-parcel-list');
+      const parcels = allData
+        .filter(d => d.type === 'parcel' && d.username_owner === currentUser.username)
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      if (parcels.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 text-center py-8">ยังไม่มีพัสดุของคุณในระบบ</p>';
+        return;
+      }
+
+      container.innerHTML = '';
+      parcels.forEach(parcel => {
+        const statusClass = parcel.status === 'pending' ? 'status-pending' :
+          parcel.status === 'shipping' ? 'status-shipping' : 'status-delivered';
+        const statusText = parcel.status === 'pending' ? 'รอดำเนินการ' :
+          parcel.status === 'shipping' ? 'กำลังจัดส่ง' : 'จัดส่งสำเร็จ';
+
+        const card = document.createElement('div');
+        card.className = 'parcel-card bg-gray-50 rounded-xl p-5 border border-gray-100';
+        card.innerHTML = `
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-3 mb-3">
+                <span class="text-lg font-bold text-gray-800">${parcel.tracking_number}</span>
+                <span class="status-badge ${statusClass} text-white text-xs px-3 py-1 rounded-full font-medium">${statusText}</span>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+                <p><span class="font-medium">ผู้ส่ง:</span> ${parcel.sender_name}</p>
+                <p><span class="font-medium">ผู้รับ:</span> ${parcel.receiver_name}</p>
+                <p><span class="font-medium">ที่อยู่:</span> ${parcel.receiver_address}</p>
+                <p><span class="font-medium">ประเภท:</span> ${parcel.parcel_type} (${parcel.weight} กก.)</p>
+                ${parcel.location_description ? `<p><span class="font-medium">📍 ตำแหน่ง:</span> ${parcel.location_description}</p>` : ''}
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button onclick="openTrackingModal('${parcel.__backendId}')" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">GPS</button>
+              <button onclick="confirmDeleteUser('${parcel.__backendId}')" class="delete-btn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">ลบ</button>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Render admin all view
+    function renderAdminAllView() {
+      const container = document.getElementById('admin-all-list');
+      const parcels = allData
+        .filter(d => d.type === 'parcel')
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      if (parcels.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 text-center py-8">ยังไม่มีพัสดุในระบบ</p>';
+        return;
+      }
+
+      container.innerHTML = '';
+      parcels.forEach(parcel => {
+        const statusClass = parcel.status === 'pending' ? 'status-pending' :
+          parcel.status === 'shipping' ? 'status-shipping' : 'status-delivered';
+        const statusText = parcel.status === 'pending' ? 'รอดำเนินการ' :
+          parcel.status === 'shipping' ? 'กำลังจัดส่ง' : 'จัดส่งสำเร็จ';
+
+        const card = document.createElement('div');
+        card.className = 'parcel-card bg-gray-50 rounded-xl p-5 border border-gray-100';
+        card.innerHTML = `
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-3 mb-3">
+                <span class="text-lg font-bold text-gray-800">${parcel.tracking_number}</span>
+                <span class="status-badge ${statusClass} text-white text-xs px-3 py-1 rounded-full font-medium">${statusText}</span>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+                <p><span class="font-medium">เจ้าของ:</span> ${parcel.username_owner}</p>
+                <p><span class="font-medium">ผู้ส่ง:</span> ${parcel.sender_name}</p>
+                <p><span class="font-medium">ผู้รับ:</span> ${parcel.receiver_name}</p>
+                <p><span class="font-medium">ที่อยู่:</span> ${parcel.receiver_address}</p>
+                <p><span class="font-medium">ประเภท:</span> ${parcel.parcel_type} (${parcel.weight} กก.)</p>
+                ${parcel.location_description ? `<p><span class="font-medium">📍 ตำแหน่ง:</span> ${parcel.location_description}</p>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Render admin manage view
+    function renderAdminManageView() {
+      const container = document.getElementById('admin-manage-list');
+      const parcels = allData
+        .filter(d => d.type === 'parcel')
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      if (parcels.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 text-center py-8">ยังไม่มีพัสดุในระบบ</p>';
+        return;
+      }
+
+      container.innerHTML = '';
+      parcels.forEach(parcel => {
+        const statusClass = parcel.status === 'pending' ? 'status-pending' :
+          parcel.status === 'shipping' ? 'status-shipping' : 'status-delivered';
+        const statusText = parcel.status === 'pending' ? 'รอดำเนินการ' :
+          parcel.status === 'shipping' ? 'กำลังจัดส่ง' : 'จัดส่งสำเร็จ';
+
+        const card = document.createElement('div');
+        card.className = 'parcel-card bg-gray-50 rounded-xl p-5 border border-gray-100';
+        card.innerHTML = `
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-3 mb-3">
+                <span class="text-lg font-bold text-gray-800">${parcel.tracking_number}</span>
+                <span class="status-badge ${statusClass} text-white text-xs px-3 py-1 rounded-full font-medium">${statusText}</span>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+                <p><span class="font-medium">เจ้าของ:</span> ${parcel.username_owner}</p>
+                <p><span class="font-medium">ผู้ส่ง:</span> ${parcel.sender_name}</p>
+                <p><span class="font-medium">ผู้รับ:</span> ${parcel.receiver_name}</p>
+                <p><span class="font-medium">ที่อยู่:</span> ${parcel.receiver_address}</p>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              ${parcel.status === 'pending' ? `<button onclick="updateParcelStatus('${parcel.__backendId}', 'shipping')" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">จัดส่ง</button>` : ''}
+              ${parcel.status === 'shipping' ? `<button onclick="updateParcelStatus('${parcel.__backendId}', 'delivered')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">ส่งสำเร็จ</button>` : ''}
+              <button onclick="openTrackingModal('${parcel.__backendId}')" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">GPS</button>
+              <button onclick="confirmDeleteAdmin('${parcel.__backendId}')" class="delete-btn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">ลบ</button>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Render admin users view
+    function renderAdminUsersView() {
+      const container = document.getElementById('admin-users-list');
+      const users = allData
+        .filter(d => d.type === 'user')
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      if (users.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 text-center py-8">ยังไม่มีผู้ใช้ในระบบ</p>';
+        return;
+      }
+
+      container.innerHTML = '';
+      users.forEach(user => {
+        const userParcels = allData.filter(d => d.type === 'parcel' && d.username_owner === user.username).length;
+        const roleClass = user.role === 'admin' ? 'role-admin' : 'role-user';
+        const roleText = user.role === 'admin' ? 'ผู้ดูแลระบบ' : 'ผู้ใช้ทั่วไป';
+
+        const card = document.createElement('div');
+        card.className = 'parcel-card bg-gray-50 rounded-xl p-5 border border-gray-100';
+        card.innerHTML = `
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="flex-1">
+              <div class="flex items-center gap-3 mb-3">
+                <span class="text-lg font-bold text-gray-800">${user.username}</span>
+                <span class="role-badge ${roleClass}">${roleText}</span>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+                <p><span class="font-medium">อีเมล:</span> ${user.email}</p>
+                <p><span class="font-medium">พัสดุ:</span> ${userParcels} รายการ</p>
+              </div>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Render admin view
+    function renderAdminView() {
+      if (currentTab === 'all') renderAdminAllView();
+      else if (currentTab === 'manage') renderAdminManageView();
+      else if (currentTab === 'users') renderAdminUsersView();
+    }
+
+    // Analytics
+    function updateAnalytics(timeframe, el) {
+      analyticsTimeframe = timeframe;
+
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+      if (el) el.classList.add('active');
+
+      const parcels = allData.filter(d => d.type === 'parcel');
+      const now = new Date();
+      let filteredParcels = [];
+
+      if (timeframe === 'daily') {
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        filteredParcels = parcels.filter(p => {
+          const pDate = new Date(p.created_at);
+          return pDate.getTime() >= today.getTime();
+        });
+      } else if (timeframe === 'weekly') {
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        filteredParcels = parcels.filter(p => new Date(p.created_at) >= weekAgo);
+      } else if (timeframe === 'monthly') {
+        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        filteredParcels = parcels.filter(p => new Date(p.created_at) >= monthAgo);
+      }
+
+      updateStatusChart(filteredParcels);
+      updateTypeChart(filteredParcels);
+      updateTrendsChart(parcels, timeframe);
+    }
+
+    function updateStatusChart(parcels) {
+      const pending = parcels.filter(p => p.status === 'pending').length;
+      const shipping = parcels.filter(p => p.status === 'shipping').length;
+      const delivered = parcels.filter(p => p.status === 'delivered').length;
+
+      const ctx = document.getElementById('statusChart');
+      if (chartInstances.statusChart) chartInstances.statusChart.destroy();
+
+      chartInstances.statusChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['รอดำเนินการ', 'กำลังจัดส่ง', 'จัดส่งสำเร็จ'],
+          datasets: [{
+            data: [pending, shipping, delivered],
+            backgroundColor: ['#FBBF24', '#3B82F6', '#10B981'],
+            borderColor: '#fff',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom' }
+          }
+        }
+      });
+    }
+
+    function updateTypeChart(parcels) {
+      const types = {};
+      const colors = ['#F59E0B', '#3B82F6', '#10B981', '#EF4444', '#8B5CF6'];
+
+      parcels.forEach(p => {
+        types[p.parcel_type] = (types[p.parcel_type] || 0) + 1;
+      });
+
+      const ctx = document.getElementById('typeChart');
+      if (chartInstances.typeChart) chartInstances.typeChart.destroy();
+
+      chartInstances.typeChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(types),
+          datasets: [{
+            label: 'จำนวน',
+            data: Object.values(types),
+            backgroundColor: colors.slice(0, Object.keys(types).length),
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          indexAxis: 'y',
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: { beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    function updateTrendsChart(parcels, timeframe) {
+      let labels = [];
+      let dataMap = {};
+
+      if (timeframe === 'daily') {
+        for (let i = 0; i < 24; i++) {
+          labels.push(`${i}:00`);
+          dataMap[i] = 0;
+        }
+        parcels.forEach(p => {
+          const hour = new Date(p.created_at).getHours();
+          dataMap[hour]++;
+        });
+      } else if (timeframe === 'weekly') {
+        const days = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัส', 'ศุกร์', 'เสาร์', 'อาทิตย์'];
+        labels = days;
+        days.forEach((d, i) => dataMap[i] = 0);
+        parcels.forEach(p => {
+          const day = new Date(p.created_at).getDay();
+          dataMap[(day || 6)]++;
+        });
+      } else {
+        for (let i = 1; i <= 30; i++) {
+          labels.push(`วันที่ ${i}`);
+          dataMap[i] = 0;
+        }
+        parcels.forEach(p => {
+          const date = new Date(p.created_at).getDate();
+          if (dataMap.hasOwnProperty(date)) dataMap[date]++;
+        });
+      }
+
+      const ctx = document.getElementById('trendsChart');
+      if (chartInstances.trendsChart) chartInstances.trendsChart.destroy();
+
+      chartInstances.trendsChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'จำนวนพัสดุ',
+            data: Object.values(dataMap),
+            borderColor: '#F59E0B',
+            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+            tension: 0.3,
+            fill: true,
+            pointRadius: 4,
+            pointBackgroundColor: '#F59E0B'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: true }
+          },
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    // Open tracking modal
+    function openTrackingModal(parcelId) {
+      trackingParcelId = parcelId;
+      const parcel = allData.find(d => d.__backendId === parcelId);
+
+      document.getElementById('modal-title').textContent = `แทรก GPS - ${parcel.tracking_number}`;
+
+      if (parcel.latitude && parcel.longitude) {
+        document.getElementById('tracking-latitude').value = parcel.latitude;
+        document.getElementById('tracking-longitude').value = parcel.longitude;
+        document.getElementById('tracking-location').value = parcel.location_description || '';
+      } else {
+        document.getElementById('tracking-latitude').value = '';
+        document.getElementById('tracking-longitude').value = '';
+        document.getElementById('tracking-location').value = '';
+      }
+
+      document.getElementById('tracking-modal').classList.remove('hidden');
+    }
+
+    // Close tracking modal
+    function closeTrackingModal() {
+      document.getElementById('tracking-modal').classList.add('hidden');
+      trackingParcelId = null;
+    }
+
+    // Confirm delete user
+    function confirmDeleteUser(id) {
+      const cards = document.querySelectorAll('.parcel-card');
+      let card = null;
+
+      cards.forEach(c => {
+        if (c.innerHTML.includes(id.substring(0, 8))) {
+          card = c;
+        }
+      });
+
+      if (!card) return;
+
+      const deleteBtn = card.querySelector('.delete-btn');
+      if (!deleteBtn) return;
+
+      if (deleteBtn.dataset.confirming === 'true') {
+        deleteParcelUser(id);
+      } else {
+        deleteBtn.textContent = 'ยืนยันลบ?';
+        deleteBtn.dataset.confirming = 'true';
+        deleteBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
+        deleteBtn.classList.add('bg-orange-500', 'hover:bg-orange-600');
+
+        setTimeout(() => {
+          if (deleteBtn.dataset.confirming === 'true') {
+            deleteBtn.textContent = 'ลบ';
+            deleteBtn.dataset.confirming = 'false';
+            deleteBtn.classList.remove('bg-orange-500', 'hover:bg-orange-600');
+            deleteBtn.classList.add('bg-red-500', 'hover:bg-red-600');
+          }
+        }, 3000);
+      }
+    }
+
+    // Confirm delete admin
+    function confirmDeleteAdmin(id) {
+      const cards = document.querySelectorAll('.parcel-card');
+      let card = null;
+
+      cards.forEach(c => {
+        if (c.innerHTML.includes(id.substring(0, 8))) {
+          card = c;
+        }
+      });
+
+      if (!card) return;
+
+      const deleteBtn = card.querySelector('.delete-btn');
+      if (!deleteBtn) return;
+
+      if (deleteBtn.dataset.confirming === 'true') {
+        deleteParcelAdmin(id);
+      } else {
+        deleteBtn.textContent = 'ยืนยันลบ?';
+        deleteBtn.dataset.confirming = 'true';
+        deleteBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
+        deleteBtn.classList.add('bg-orange-500', 'hover:bg-orange-600');
+
+        setTimeout(() => {
+          if (deleteBtn.dataset.confirming === 'true') {
+            deleteBtn.textContent = 'ลบ';
+            deleteBtn.dataset.confirming = 'false';
+            deleteBtn.classList.remove('bg-orange-500', 'hover:bg-orange-600');
+            deleteBtn.classList.add('bg-red-500', 'hover:bg-red-600');
+          }
+        }, 3000);
+      }
+    }
+
+    // Delete parcel user
+    async function deleteParcelUser(id) {
+      if (isProcessing) return;
+      isProcessing = true;
+
+      const parcel = allData.find(d => d.__backendId === id);
+      if (parcel) {
+        const result = await dataSdk.delete(parcel);
+        if (result.isOk) {
+          showToast('ลบพัสดุเรียบร้อยแล้ว');
+        } else {
+          showToast('เกิดข้อผิดพลาด', 'error');
+        }
+      }
+      isProcessing = false;
+    }
+
+    // Delete parcel admin
+    async function deleteParcelAdmin(id) {
+      if (isProcessing) return;
+      isProcessing = true;
+
+      const parcel = allData.find(d => d.__backendId === id);
+      if (parcel) {
+        const result = await dataSdk.delete(parcel);
+        if (result.isOk) {
+          showToast('ลบพัสดุเรียบร้อยแล้ว');
+        } else {
+          showToast('เกิดข้อผิดพลาด', 'error');
+        }
+      }
+      isProcessing = false;
+    }
+
+    // Update parcel status
+    async function updateParcelStatus(id, newStatus) {
+      if (isProcessing) return;
+      isProcessing = true;
+
+      const parcel = allData.find(d => d.__backendId === id);
+      if (parcel) {
+        parcel.status = newStatus;
+        const result = await dataSdk.update(parcel);
+        if (result.isOk) {
+          const statusText = newStatus === 'shipping' ? 'กำลังจัดส่ง' : 'จัดส่งสำเร็จ';
+          showToast(`อัพเดทสถานะเป็น "${statusText}" แล้ว`);
+        } else {
+          showToast('เกิดข้อผิดพลาด', 'error');
+        }
+      }
+      isProcessing = false;
+    }
+
+    // Logout — clear cookie and reload
+    function logout() {
+      currentUser = null;
+      deleteCookie('parcel_session');
+      location.reload();
+    }
+
+    // Data handler
+    const dataHandler = {
+      onDataChanged(data) {
+        allData = data;
+        updateStats();
+
+        if (currentUser) {
+          if (currentUser.role === 'admin') {
+            renderAdminView();
+          } else {
+            renderUserParcels();
+          }
+        }
+
+        const totalRecords = data.length;
+        const warningEl = document.getElementById('limit-warning');
+
+        if (warningEl && totalRecords >= 999) {
+          warningEl.classList.remove('hidden');
+        } else if (warningEl) {
+          warningEl.classList.add('hidden');
+        }
+      }
+    };
+
+    // Element SDK handler
+    async function onConfigChange(cfg) {
+      config = { ...defaultConfig, ...cfg };
+
+      document.getElementById('login-title').textContent = config.app_title;
+      document.getElementById('login-subtitle').textContent = config.welcome_text;
+      document.getElementById('dashboard-title').textContent = config.app_title;
+    }
+
+    // Initialize
+    async function init() {
+      // Initialize Firebase realtime listener
+      const initResult = await dataSdk.init(dataHandler);
+      if (!initResult.isOk) {
+        console.error('Failed to initialize Firebase');
+      }
+
+      // Check if database is empty and seed if needed
+      setTimeout(() => {
+        const userCount = allData.filter(d => d.type === 'user').length;
+        if (userCount === 0) {
+          seedData();
+        }
+
+        // ── Auto-restore session from cookie ────────────────────
+        const savedUsername = getCookie('parcel_session');
+        if (savedUsername && !currentUser) {
+          const user = allData.find(d => d.type === 'user' && d.username === savedUsername);
+          if (user) {
+            applySession(user);
+            showToast(`ยินดีต้อนรับกลับ, ${user.username}`);
+          } else {
+            // Cookie username not found in DB → clear it
+            deleteCookie('parcel_session');
+          }
+        }
+      }, 2000);
+
+      // Login form
+      document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('login-username').value.trim();
+        const password = document.getElementById('login-password').value;
+
+        const user = allData.find(d => d.type === 'user' && d.username === username);
+
+        if (!user) {
+          showToast('ไม่พบบัญชีผู้ใช้นี้', 'error');
+          return;
+        }
+
+        if (user.password !== password) {
+          showToast('รหัสผ่านไม่ถูกต้อง', 'error');
+          return;
+        }
+
+        currentUser = user;
+
+        // Save login cookie (30 days) and reload page
+        setCookie('parcel_session', user.username, 30);
+        location.reload();
+      });
+
+      // Register form
+      document.getElementById('register-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (isProcessing) return;
+
+        const username = document.getElementById('reg-username').value.trim();
+        const email = document.getElementById('reg-email').value.trim();
+        const role = "user"//document.getElementById('reg-role').value;
+        const password = document.getElementById('reg-password').value;
+        const confirm = document.getElementById('reg-confirm').value;
+
+        if (password !== confirm) {
+          showToast('รหัสผ่านไม่ตรงกัน', 'error');
+          return;
+        }
+
+        if (password.length < 4) {
+          showToast('รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร', 'error');
+          return;
+        }
+
+        const existingUser = allData.find(d => d.type === 'user' && d.username === username);
+        if (existingUser) {
+          showToast('ชื่อผู้ใช้นี้ถูกใช้แล้ว', 'error');
+          return;
+        }
+
+        if (allData.length >= 999) {
+          showToast('ระบบเต็มแล้ว ไม่สามารถสมัครได้', 'error');
+          return;
+        }
+
+        isProcessing = true;
+        const result = await dataSdk.create({
+          type: 'user',
+          username,
+          email,
+          role,
+          password,
+          tracking_number: '',
+          sender_name: '',
+          receiver_name: '',
+          receiver_address: '',
+          status: '',
+          created_at: new Date().toISOString(),
+          weight: '',
+          parcel_type: '',
+          username_owner: '',
+          latitude: '',
+          longitude: '',
+          location_description: ''
+        });
+
+        if (result.isOk) {
+          showToast('สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ');
+          showPage('login');
+          document.getElementById('register-form').reset();
+        } else {
+          showToast('เกิดข้อผิดพลาด', 'error');
+        }
+        isProcessing = false;
+      });
+
+      // User parcel form
+      document.getElementById('parcel-form-user').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (isProcessing) return;
+
+        if (allData.length >= 999) {
+          showToast('ถึงขีดจำกัดแล้ว กรุณาลบข้อมูลบางส่วน', 'error');
+          return;
+        }
+
+        isProcessing = true;
+        const addBtn = document.getElementById('add-parcel-btn-user');
+        addBtn.textContent = 'กำลังเพิ่ม...';
+        addBtn.disabled = true;
+
+        const result = await dataSdk.create({
+          type: 'parcel',
+          tracking_number: generateTrackingNumber(),
+          sender_name: document.getElementById('sender-name-user').value.trim(),
+          receiver_name: document.getElementById('receiver-name-user').value.trim(),
+          receiver_address: document.getElementById('receiver-address-user').value.trim(),
+          parcel_type: document.getElementById('parcel-type-user').value,
+          weight: document.getElementById('parcel-weight-user').value,
+          status: 'pending',
+          created_at: new Date().toISOString(),
+          username_owner: currentUser.username,
+          username: '',
+          email: '',
+          password: '',
+          role: '',
+          latitude: '',
+          longitude: '',
+          location_description: ''
+        });
+
+        addBtn.textContent = 'เพิ่มพัสดุ';
+        addBtn.disabled = false;
+
+        if (result.isOk) {
+          showToast('เพิ่มพัสดุสำเร็จ');
+          document.getElementById('parcel-form-user').reset();
+        } else {
+          showToast('เกิดข้อผิดพลาด', 'error');
+        }
+        isProcessing = false;
+      });
+
+      // Admin parcel form
+      document.getElementById('parcel-form-admin').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (isProcessing) return;
+
+        if (allData.length >= 999) {
+          showToast('ถึงขีดจำกัดแล้ว กรุณาลบข้อมูลบางส่วน', 'error');
+          return;
+        }
+
+        isProcessing = true;
+        const addBtn = document.getElementById('add-parcel-btn-admin');
+        addBtn.textContent = 'กำลังเพิ่ม...';
+        addBtn.disabled = true;
+
+        const result = await dataSdk.create({
+          type: 'parcel',
+          tracking_number: generateTrackingNumber(),
+          sender_name: document.getElementById('sender-name-admin').value.trim(),
+          receiver_name: document.getElementById('receiver-name-admin').value.trim(),
+          receiver_address: document.getElementById('receiver-address-admin').value.trim(),
+          parcel_type: document.getElementById('parcel-type-admin').value,
+          weight: document.getElementById('parcel-weight-admin').value,
+          status: 'pending',
+          created_at: new Date().toISOString(),
+          username_owner: currentUser.username,
+          username: '',
+          email: '',
+          password: '',
+          role: '',
+          latitude: '',
+          longitude: '',
+          location_description: ''
+        });
+
+        addBtn.textContent = 'เพิ่มพัสดุ';
+        addBtn.disabled = false;
+
+        if (result.isOk) {
+          showToast('เพิ่มพัสดุสำเร็จ');
+          document.getElementById('parcel-form-admin').reset();
+        } else {
+          showToast('เกิดข้อผิดพลาด', 'error');
+        }
+        isProcessing = false;
+      });
+
+      // Tracking form
+      document.getElementById('tracking-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (isProcessing) return;
+
+        isProcessing = true;
+
+        const parcel = allData.find(d => d.__backendId === trackingParcelId);
+        if (parcel) {
+          parcel.latitude = document.getElementById('tracking-latitude').value;
+          parcel.longitude = document.getElementById('tracking-longitude').value;
+          parcel.location_description = document.getElementById('tracking-location').value;
+
+          const result = await dataSdk.update(parcel);
+          if (result.isOk) {
+            showToast('บันทึก GPS สำเร็จ');
+            closeTrackingModal();
+          } else {
+            showToast('เกิดข้อผิดพลาด', 'error');
+          }
+        }
+        isProcessing = false;
+      });
+
+      document.addEventListener('click', (e) => {
+        if (e.target === document.getElementById('tracking-modal')) {
+          closeTrackingModal();
+        }
+      });
+    }
+
+    init();
+
+    // Mobile bottom nav helpers
+    function mobileSwitchToHome() {
+      if (currentUser && currentUser.role === 'admin') {
+        const firstTab = document.querySelector('#admin-tabs .tab-button');
+        if (firstTab) switchTab('all', firstTab);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function mobileSwitchToManage() {
+      if (currentUser && currentUser.role === 'admin') {
+        const tabs = document.querySelectorAll('#admin-tabs .tab-button');
+        if (tabs[1]) switchTab('manage', tabs[1]);
+      }
+    }
+
+    // Expose functions to global scope so HTML onclick attributes can access them
+    // (functions inside type="module" are not global by default)
+    window.showPage = showPage;
+    window.switchTab = switchTab;
+    window.logout = logout;
+    window.updateAnalytics = updateAnalytics;
+    window.openTrackingModal = openTrackingModal;
+    window.closeTrackingModal = closeTrackingModal;
+    window.confirmDeleteUser = confirmDeleteUser;
+    window.confirmDeleteAdmin = confirmDeleteAdmin;
+    window.updateParcelStatus = updateParcelStatus;
+    window.mobileSwitchToHome = mobileSwitchToHome;
+    window.mobileSwitchToManage = mobileSwitchToManage;
+  </script>
+  <script>(function () { function c() { var b = a.contentDocument || a.contentWindow.document; if (b) { var d = b.createElement('script'); d.innerHTML = "window.__CF$cv$params={r:'9d279a56a5e67334',t:'MTc3MTg1ODkzMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);"; b.getElementsByTagName('head')[0].appendChild(d) } } if (document.body) { var a = document.createElement('iframe'); a.height = 1; a.width = 1; a.style.position = 'absolute'; a.style.top = 0; a.style.left = 0; a.style.border = 'none'; a.style.visibility = 'hidden'; document.body.appendChild(a); if ('loading' !== document.readyState) c(); else if (window.addEventListener) document.addEventListener('DOMContentLoaded', c); else { var e = document.onreadystatechange || function () { }; document.onreadystatechange = function (b) { e(b); 'loading' !== document.readyState && (document.onreadystatechange = e, c()) } } } })();</script>
+</body>
+
+</html>
