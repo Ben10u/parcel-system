@@ -161,6 +161,10 @@
       display: flex;
     }
 
+    #admin-tabs.hidden {
+      display: none;
+    }
+
     #admin-tabs::-webkit-scrollbar {
       display: none;
     }
@@ -411,7 +415,8 @@
           <button onclick="switchTab('users', this)" class="tab-button">ผู้ใช้</button>
           <button onclick="switchTab('analytics', this)" class="tab-button">สถิติ</button>
         </div><!-- Stats Cards -->
-        <div class="stats-grid grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
+        <div id="admin-stats"
+          class="stats-grid grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8 hidden">
           <div class="bg-white rounded-2xl p-6 shadow-sm">
             <div class="flex items-center gap-4">
               <div class="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center">
@@ -545,6 +550,10 @@
               </svg> เพิ่มพัสดุใหม่
             </h2>
             <form id="parcel-form-admin" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div><label class="block text-sm font-medium text-gray-700 mb-2">เจ้าของพัสดุ (Username)</label> <input
+                  type="text" id="owner-username-admin" class="input-field w-full px-4 py-3 rounded-xl outline-none"
+                  placeholder="กรอก Username เจ้าของ" required>
+              </div>
               <div><label class="block text-sm font-medium text-gray-700 mb-2">ชื่อผู้ส่ง</label> <input type="text"
                   id="sender-name-admin" class="input-field w-full px-4 py-3 rounded-xl outline-none"
                   placeholder="กรอกชื่อผู้ส่ง" required>
@@ -806,9 +815,13 @@
       if (user.role === 'admin') {
         document.getElementById('user-view').classList.add('hidden');
         document.getElementById('admin-tabs').classList.remove('hidden');
+        const adminStats = document.getElementById('admin-stats');
+        if (adminStats) adminStats.classList.remove('hidden');
         renderAdminView();
       } else {
         document.getElementById('admin-tabs').classList.add('hidden');
+        const adminStats = document.getElementById('admin-stats');
+        if (adminStats) adminStats.classList.add('hidden');
         document.getElementById('user-view').classList.remove('hidden');
         renderUserParcels();
       }
@@ -832,89 +845,6 @@
       const timestamp = Date.now().toString(36).toUpperCase();
       const random = Math.random().toString(36).substring(2, 6).toUpperCase();
       return `${prefix}${timestamp}${random}`;
-    }
-
-    // Seed initial data
-    async function seedData() {
-      if (seedingInProgress) return;
-      seedingInProgress = true;
-
-      const users = [
-        { username: 'admin', email: 'admin@system.com', role: 'admin', password: 'admin123' },
-        { username: 'user1', email: 'user1@example.com', role: 'user', password: 'password123' },
-        { username: 'user2', email: 'user2@example.com', role: 'user', password: 'password123' },
-        { username: 'user3', email: 'user3@example.com', role: 'user', password: 'password123' },
-        { username: 'user4', email: 'user4@example.com', role: 'user', password: 'password123' },
-        { username: 'user5', email: 'user5@example.com', role: 'user', password: 'password123' }
-      ];
-
-      const senderNames = ['บริษัท ABC', 'ที่ทำงาน', 'ร้านค้า', 'บ้าน'];
-      const receiverNames = ['นายสมใจ', 'นางสมหญิง', 'นายกิจ', 'นายธรรม', 'นางใจดี'];
-      const addresses = ['กรุงเทพ', 'เชียงใหม่', 'ขอนแก่น', 'เพชรบูรณ์', 'ราชบุรี', 'ชลบุรี'];
-      const types = ['เอกสาร', 'พัสดุขนาดเล็ก', 'พัสดุขนาดกลาง', 'พัสดุขนาดใหญ่', 'สินค้าแตกหักง่าย'];
-      const statuses = ['pending', 'shipping', 'delivered'];
-
-      try {
-        // Create users first
-        for (const user of users) {
-          const result = await dataSdk.create({
-            type: 'user',
-            username: user.username,
-            email: user.email,
-            role: user.role,
-            password: user.password,
-            tracking_number: '',
-            sender_name: '',
-            receiver_name: '',
-            receiver_address: '',
-            status: '',
-            created_at: new Date().toISOString(),
-            weight: '',
-            parcel_type: '',
-            username_owner: '',
-            latitude: '',
-            longitude: '',
-            location_description: ''
-          });
-          if (!result.isOk) break;
-        }
-
-        // Create parcels
-        for (let i = 0; i < 35; i++) {
-          const daysAgo = Math.floor(Math.random() * 60);
-          const date = new Date();
-          date.setDate(date.getDate() - daysAgo);
-
-          const randomUser = users[Math.floor(Math.random() * (users.length - 1)) + 1];
-
-          const result = await dataSdk.create({
-            type: 'parcel',
-            tracking_number: generateTrackingNumber(),
-            sender_name: senderNames[Math.floor(Math.random() * senderNames.length)],
-            receiver_name: receiverNames[Math.floor(Math.random() * receiverNames.length)],
-            receiver_address: addresses[Math.floor(Math.random() * addresses.length)],
-            parcel_type: types[Math.floor(Math.random() * types.length)],
-            weight: (Math.random() * 50 + 0.5).toFixed(2),
-            status: statuses[Math.floor(Math.random() * statuses.length)],
-            created_at: date.toISOString(),
-            username_owner: randomUser.username,
-            username: '',
-            email: '',
-            password: '',
-            role: '',
-            latitude: (13.7563 + (Math.random() - 0.5)).toFixed(4),
-            longitude: (100.5018 + (Math.random() - 0.5)).toFixed(4),
-            location_description: addresses[Math.floor(Math.random() * addresses.length)]
-          });
-          if (!result.isOk) break;
-        }
-
-        showToast('โหลดข้อมูลตัวอย่างสำเร็จ', 'success');
-      } catch (e) {
-        console.error('Seeding error:', e);
-      }
-
-      seedingInProgress = false;
     }
 
     // Page navigation
@@ -1513,9 +1443,6 @@
       // Check if database is empty and seed if needed
       setTimeout(() => {
         const userCount = rawData.filter(d => d.type === 'user').length;
-        if (userCount === 0) {
-          seedData();
-        }
 
         // ── Auto-restore session from cookie ────────────────────
         const savedUsername = getCookie('parcel_session');
@@ -1529,7 +1456,7 @@
             deleteCookie('parcel_session');
           }
         }
-      }, 2000);
+      }, 500);
 
       // Login form
       document.getElementById('login-form').addEventListener('submit', async (e) => {
@@ -1693,7 +1620,7 @@
           weight: document.getElementById('parcel-weight-admin').value,
           status: 'pending',
           created_at: new Date().toISOString(),
-          username_owner: currentUser.username,
+          username_owner: document.getElementById('owner-username-admin').value.trim(),
           username: '',
           email: '',
           password: '',
