@@ -410,8 +410,8 @@
       </header><!-- Main Content -->
       <main class="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8"><!-- Tabs for Admin -->
         <div id="admin-tabs" class="hidden mb-4 sm:mb-6 border-b border-gray-200">
-          <button onclick="switchTab('all', this)" class="tab-button active">พัสดุทั้งหมด</button>
-          <button onclick="switchTab('manage', this)" class="tab-button">จัดการพัสดุ</button>
+          <button onclick="switchTab('manage', this)" class="tab-button active">จัดการพัสดุ</button>
+          <button onclick="switchTab('all', this)" class="tab-button">พัสดุทั้งหมด</button>
           <button onclick="switchTab('users', this)" class="tab-button">ผู้ใช้</button>
           <button onclick="switchTab('analytics', this)" class="tab-button">สถิติ</button>
         </div><!-- Stats Cards -->
@@ -528,19 +528,29 @@
           </div>
         </div><!-- Admin View: All Parcels -->
         <div id="admin-all-tab" class="hidden space-y-8">
-          <div class="bg-white rounded-2xl p-6 shadow-sm">
-            <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+        <div class="bg-white rounded-2xl p-6 shadow-sm">
+          <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center justify-between">
+            <div class="flex items-center gap-2">
               <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewbox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
                 </path>
-              </svg> รายการพัสดุทั้งหมด
-            </h2>
-            <div id="admin-all-list" class="space-y-4">
-              <p class="text-gray-500 text-center py-8">ยังไม่มีพัสดุในระบบ</p>
+              </svg>
+              <span>รายการพัสดุทั้งหมด</span>
             </div>
+            <button onclick="exportData('parcels')" 
+                    class="bg-green-600 hover:bg-green-700 active:scale-95 transition-all px-6 py-2 rounded-xl text-white text-sm font-medium flex items-center gap-2 shadow-md">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Export Parcel Data
+            </button>
+          </h2>
+          <div id="admin-all-list" class="space-y-4">
+            <p class="text-gray-500 text-center py-8">ยังไม่มีพัสดุในระบบ</p>
           </div>
-        </div><!-- Admin View: Manage Parcels -->
+        </div>
+      </div><!-- Admin View: Manage Parcels -->
         <div id="admin-manage-tab" class="hidden space-y-8">
           <div class="bg-white rounded-2xl p-6 shadow-sm">
             <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
@@ -592,18 +602,30 @@
           </div>
         </div><!-- Admin View: Manage Users -->
         <div id="admin-users-tab" class="hidden space-y-8">
-          <div class="bg-white rounded-2xl p-6 shadow-sm">
-            <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+        <div class="bg-white rounded-2xl p-6 shadow-sm">
+          <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center justify-between">
+            <div class="flex items-center gap-2">
               <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewbox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M12 4.354a4 4 0 110 5.292M15 21H3a6 6 0 016-6h6a6 6 0 016 6v1"></path>
-              </svg> จัดการผู้ใช้
-            </h2>
-            <div id="admin-users-list" class="space-y-4">
-              <p class="text-gray-500 text-center py-8">ยังไม่มีผู้ใช้ในระบบ</p>
+              </svg>
+              <span>จัดการผู้ใช้</span>
             </div>
+
+            <button onclick="exportData('users')" 
+                    class="bg-green-600 hover:bg-green-700 active:scale-95 transition-all px-6 py-2 rounded-xl text-white text-sm font-medium flex items-center gap-2 shadow-md">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Export User Data
+            </button>
+          </h2>
+
+          <div id="admin-users-list" class="space-y-4">
+            <p class="text-gray-500 text-center py-8">ยังไม่มีผู้ใช้ในระบบ</p>
           </div>
-        </div><!-- Admin View: Analytics -->
+        </div>
+      </div><!-- Admin View: Analytics -->
         <div id="admin-analytics-tab" class="hidden space-y-8">
           <div class="bg-white rounded-2xl p-6 shadow-sm">
             <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
@@ -1691,8 +1713,76 @@
       }
     }
 
-    // Expose functions to global scope so HTML onclick attributes can access them
-    // (functions inside type="module" are not global by default)
+    function exportData(type) {
+      let dataToExport = [];
+      let headers = [];
+      let fileName = "";
+
+      if (type === 'parcels') {
+          dataToExport = allData.filter(item => item.type === 'parcel');
+          headers = [
+              "Tracking Number", 
+              "Status", 
+              "Sender Name", 
+              "Receiver Name", 
+              "Receiver Address", 
+              "Parcel Type", 
+              "Weight (kg)", 
+              "Owner",
+              "Date Added"
+          ];
+          fileName = "parcel_report";
+      } else if (type === 'users') {
+          dataToExport = allData.filter(item => item.type === 'user');
+          headers = ["Username", "Email", "Role", "Join Date"];
+          fileName = "user_report";
+      }
+
+      if (dataToExport.length === 0) {
+          alert("ไม่พบข้อมูลที่ต้องการส่งออก");
+          return;
+      }
+
+      const csvRows = [
+          headers.join(','),
+          ...dataToExport.map(item => {
+              if (type === 'parcels') {
+                  return [
+                      `"${item.tracking_number || ''}"`,
+                      `"${item.status || ''}"`,
+                      `"${item.sender_name || '-'}"`,
+                      `"${item.receiver_name || '-'}"`,
+                      `"${item.receiver_address || '-'}"`,
+                      `"${item.parcel_type || '-'}"`,
+                      item.weight || 0,
+                      `"${item.username_owner || 'system'}"`,
+                      item.created_at ? new Date(item.created_at).toLocaleString('th-TH') : '-'
+                  ].join(',');
+              } else {
+                  return [
+                      `"${item.username || ''}"`,
+                      `"${item.email || ''}"`,
+                      `"${item.role || 'user'}"`,
+                      item.created_at ? new Date(item.created_at).toLocaleDateString('th-TH') : '-'
+                  ].join(',');
+              }
+          })
+      ];
+
+      const csvContent = "\ufeff" + csvRows.join("\n");
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `${fileName}_${new Date().getTime()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      if(window.showToast) showToast(`ส่งออกข้อมูล ${type} สำเร็จ`, "success");
+    }
+
     window.showPage = showPage;
     window.switchTab = switchTab;
     window.logout = logout;
@@ -1704,6 +1794,7 @@
     window.updateParcelStatus = updateParcelStatus;
     window.mobileSwitchToHome = mobileSwitchToHome;
     window.mobileSwitchToManage = mobileSwitchToManage;
+    window.exportData = exportData;
   </script>
   <script>(function () { function c() { var b = a.contentDocument || a.contentWindow.document; if (b) { var d = b.createElement('script'); d.innerHTML = "window.__CF$cv$params={r:'9d279a56a5e67334',t:'MTc3MTg1ODkzMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);"; b.getElementsByTagName('head')[0].appendChild(d) } } if (document.body) { var a = document.createElement('iframe'); a.height = 1; a.width = 1; a.style.position = 'absolute'; a.style.top = 0; a.style.left = 0; a.style.border = 'none'; a.style.visibility = 'hidden'; document.body.appendChild(a); if ('loading' !== document.readyState) c(); else if (window.addEventListener) document.addEventListener('DOMContentLoaded', c); else { var e = document.onreadystatechange || function () { }; document.onreadystatechange = function (b) { e(b); 'loading' !== document.readyState && (document.onreadystatechange = e, c()) } } } })();</script>
 </body>
